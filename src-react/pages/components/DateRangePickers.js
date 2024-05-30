@@ -155,7 +155,7 @@ const DateRangePickers = (props) => {
             setshowPicker(!showPicker);
           }}
         >
-          <button className="col-6 py-4 btn-datepicker-calendar">
+          <button className="col-5 py-3 btn-datepicker-calendar">
             <img className="me-2" src={images.calendar} alt="calendar" />
             <span className="input-text">
               {props?.startDate
@@ -163,7 +163,7 @@ const DateRangePickers = (props) => {
                 : "From"}
             </span>
           </button>
-          <button className="col-6 py-4 btn-datepicker-arrow">
+          <button className="col-5 py-3 btn-datepicker-arrow">
             <img className="me-2" src={images.arrow} alt="arrow" />
             <span className="input-text">
               {props?.endDate

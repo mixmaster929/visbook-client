@@ -4,7 +4,6 @@ import React, { useState } from "react";
 // import images from "../Images";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// import "./styles.css";
 
 const MobileDateRangePickers = (props) => {
   return (

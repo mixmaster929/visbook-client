@@ -7,7 +7,6 @@ import MobileDateRangePickers from "./MobileDateRangePickers";
 import parser from "html-react-parser";
 import MotorHomeServices from "../../services/motorhome.services";
 import { useTranslation } from 'react-i18next';
-// import "./styles.css";
 import MotorHomeFunctions from "../../services/motorhome.functions";
 
 const MotorHome = (props) => {
@@ -162,7 +161,7 @@ const MotorHome = (props) => {
         </p>
       ) : null}
       <div className="motorhome mt-2">
-        <div className="p-4">
+        <div className="py-4 px-3">
           <div
             className={
               props.searchResult && !props.searchResult[0] ? "opacity-50" : null
@@ -278,42 +277,42 @@ const MotorHome = (props) => {
                 </div>
               ) : null}
 
-              <div className="row gx-4 pt-4 motorhome-property">
+              <div className="row gx-2 pt-4 motorhome-property">
                 <div className="col-4 ">
                   <div className="border border-1 border-black rounded-3 text-center pt-2 motorhome-properties">
                     <img src={images.seat} alt="seat" className="icon" />
-                    <div className="status">
+                    <p className="status">
                       {props.isAll
                         ? props.product.maxPeople
                         : props.product.acf.maxPeople}{" "}
                       {t('motorhome.specs.seats')}
-                    </div>
+                    </p>
                   </div>
                 </div>
                 <div className="col-4">
                   <div className="border border-1 border-black rounded-3 text-center pt-2 motorhome-properties">
                     <img src={images.bed} alt="bed" className="icon" />
-                    <div className="status">
+                    <p className="status">
                       {props.isAll
                         ? props.product.properties.persons_max.value
                         : props.product.acf.properties?.find(
                             (property) => property.propertyKey === "persons_max"
                           ).propertyValue}{" "}
                       {t('motorhome.specs.beds')}
-                    </div>
+                    </p>
                   </div>
                 </div>
                 <div className="col-4">
                   <div className="border border-1 border-black rounded-3 text-center pt-2 motorhome-properties">
                     <img src={images.classs} alt="class" className="icon" />
-                    <div className="status">
+                    <p className="status">
                     {t('motorhome.specs.class')}{" "}
                       {props.isAll
                         ? props.product.properties.licence.text
                         : props.product.acf.properties?.find(
                             (property) => property.propertyKey === "licence"
                           ).propertyText}
-                    </div>
+                    </p>
                   </div>
                 </div>
               </div>

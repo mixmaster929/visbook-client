@@ -9,7 +9,6 @@ import MotorHomeServices from "../../services/motorhome.services";
 import { GridLoader } from "react-spinners";
 import { useTranslation } from 'react-i18next';
 import NoAvailable from "../components/NoAvailable";
-// import "./styles.css";
 
 const Home = () => {
   const { t } = useTranslation();

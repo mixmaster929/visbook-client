@@ -11,27 +11,32 @@ import moment from "moment";
 import DateRangePickers from "../components/DateRangePickers";
 import { useNavigate } from "react-router-dom";
 import NoAvailable from "../components/NoAvailable";
-// import "./styles.css";
 import MotorHomeFunctions from "../../services/motorhome.functions";
 import ProductService from "../../services/motorhome.services";
-import { useTranslation } from 'react-i18next';
-import validator from 'validator';
+import { useTranslation } from "react-i18next";
+import validator from "validator";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import PhoneNumberInput from "./PhoneNumberInput";
 
 const LongText = ({ content, limit }) => {
+  const { i18n } = useTranslation();
+  const { t } = useTranslation();
+  const currentLanguage = i18n.language;
   const [showAll, setShowAll] = useState(false);
 
   const showMore = () => setShowAll(true);
   const showLess = () => setShowAll(false);
 
   if (content.length <= limit) {
-    return <div>{parser(content)}</div>;
+    return <div>{content}</div>;
   }
   if (showAll) {
     return (
       <div>
-        {parser(content)}
+        {content}
         <button className="order-detail-read-less" onClick={showLess}>
-          Read less
+          {t("readless")}
         </button>
       </div>
     );
@@ -39,9 +44,9 @@ const LongText = ({ content, limit }) => {
   const toShow = content.substring(0, limit) + "...";
   return (
     <div>
-      {parser(toShow)}
+      {toShow}
       <button className="order-detail-read-more" onClick={showMore}>
-        Read more
+        {t("readmore")}
       </button>
     </div>
   );
@@ -51,14 +56,20 @@ const Order = () => {
   const { i18n } = useTranslation();
   const { t } = useTranslation();
   const currentLanguage = i18n.language;
-  console.log("currentLanguage=>", currentLanguage);
-  const propertyText = currentLanguage.split("_")[0] !="en"? "propertyText_"+currentLanguage.replace("_", "-") : "propertyText" ;
-  const name = currentLanguage.split("_")[0] !="en"? "name_"+currentLanguage.replace("_", "-") : "name" ;
+  // console.log("currentLanguage=>", currentLanguage);
+  const propertyText =
+    currentLanguage.split("_")[0] != "en"
+      ? "propertyText_" + currentLanguage.replace("_", "-")
+      : "propertyText";
+  const name =
+    currentLanguage.split("_")[0] != "en"
+      ? "name_" + currentLanguage.replace("_", "-")
+      : "name";
   const [lang, setLang] = useState(currentLanguage.split("_")[0] === "en");
   // const name = currentLanguage.split("-")[0] === "en"? "name": "name_"+countryCodes.find(each => each.code === currentLanguage).name;
   // console.log("currentLanguage name=>", String(currentLanguage).split("-")[0]);
   // const name = String(currentLanguage).split("-")[0] === "en"? "name": "name_"+currentLanguage;
-  console.log("currentLanguage name=>", name, propertyText);
+  // console.log("currentLanguage name=>", name, propertyText);
   const data = JSON.parse(localStorage.getItem("product"));
   const searchResult = JSON.parse(localStorage.getItem("searchResult"));
   const resultByproduct = JSON.parse(localStorage.getItem("resultByproduct"));
@@ -107,6 +118,18 @@ const Order = () => {
       key: "selection",
     },
   ]);
+
+  const [formData, setFormData] = useState({
+    gender: "",
+    name: "",
+    surname: "",
+    address: "",
+    country: "",
+    cell: "",
+    mail: "",
+    repeatmail: "",
+    message: "",
+  });
 
   useEffect(() => {
     const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
@@ -173,27 +196,31 @@ const Order = () => {
     );
   }, []);
   const getProductPrice = useCallback(() => {
-    console.log("getProductPrice", startDate, endDate, currentLocation, booked);
-    if (startDate != null && endDate != null && currentLocation != "base" && booked) {
+    // console.log("getProductPrice", startDate, endDate, currentLocation, booked);
+    if (
+      startDate != null &&
+      endDate != null &&
+      currentLocation != "base" &&
+      booked
+    ) {
       // console.log("here here");
       setLoading(true);
       const startdate = moment(startDate).format("YYYY-MM-DD");
       const enddate = moment(endDate).format("YYYY-MM-DD");
       (async () => {
-
         const data = await ProductService.getPrices(
           startdate,
           enddate,
           product.acf.web_product_id
-        ).then(
-          (response) => {
+        )
+          .then((response) => {
             setProductPrices(response.data);
             setLoading(false);
-          }
-        ).catch(error => {
-          setLoading(false);
-          console.error('Error in one of the promises:', error);
-        });
+          })
+          .catch((error) => {
+            setLoading(false);
+            console.error("Error in one of the promises:", error);
+          });
       })();
     }
   }, []);
@@ -295,7 +322,7 @@ const Order = () => {
       })();
     }
   }, [product, endDate, startDate, booked]);
-  console.log(productPrices, "<=productPrices");
+  // console.log(productPrices, "<=productPrices");
 
   useEffect(() => {
     let totalPrice = 0;
@@ -348,13 +375,15 @@ const Order = () => {
   const onChangeNumberOfPersonsClick = (e) => {
     setNumberOfPersons(e.target.value);
   };
-  // const onSetStartDate = (startDate) => {
-  //   setStartDate(startDate);
-  // };
-  // const onSetEndDate = (endDate) => {
-  //   console.log("endDate=>", endDate);
-  //   setEndDate(endDate);
-  // };
+  const gotoBookingSite = () => {
+    
+    const checkIn = moment(startDate).format("YYYY-MM-DD");
+    const checkOut = moment(endDate).format("YYYY-MM-DD");
+    const externalURL = `https://reservations.visbook.com/10268/search?lang=${lang}&checkIn=${checkIn}&checkOut=${checkOut}&webProductId=%5B${product?.acf.web_product_id}%5D`;
+    console.log("gotoBookingSite=>", externalURL);
+    window.location.href = externalURL;
+
+  }
   const onSetDateRange = (range) => {
     setSelectedDates(range);
     setStartDate(range[0].startDate);
@@ -390,12 +419,12 @@ const Order = () => {
   // console.log("highlightDates=>", availableDates);
   // console.log("cachedDates=>", cachedDates);
   const handleStartMonthChange = (date) => {
-    console.log("handleStartMonthChange", date);
+    // console.log("handleStartMonthChange", date);
     setStartDate(date);
   };
 
   const handleEndMonthChange = (date) => {
-    console.log("handleEndMonthChange", date);
+    // console.log("handleEndMonthChange", date);
     setEndDate(date);
   };
 
@@ -411,8 +440,11 @@ const Order = () => {
     const total = Number(price) * count;
     let prices;
     if (selectedExtraValue.find((each) => each.id === id)) {
-      console.log("id=>", id);
-      prices = additionalPrices - selectedExtraValue.find(each => each.id === id).total + total;
+      // console.log("id=>", id);
+      prices =
+        additionalPrices -
+        selectedExtraValue.find((each) => each.id === id).total +
+        total;
       setAddtionalPrices(prices);
       setSelectedExtraValue((prevData) => {
         return prevData.map((item) => {
@@ -423,7 +455,7 @@ const Order = () => {
         });
       });
     } else {
-      console.log("id else=>", id);
+      // console.log("id else=>", id);
       prices = additionalPrices + total;
       setSelectedExtraValue([
         ...selectedExtraValue,
@@ -433,7 +465,7 @@ const Order = () => {
     }
     // setAddtionalPrices(prices)
   };
-  console.log("selectedExtraValue=>", selectedExtraValue);
+  // console.log("selectedExtraValue=>", selectedExtraValue);
   const convertDateType1 = (date) => {
     if (date != null) {
       const data =
@@ -459,34 +491,33 @@ const Order = () => {
   };
 
   const onClickConfirmOrder = async (status) => {
-    console.log("status=>", status)
-    if(status === 1)
-      setConfirmOrderStatus(status);
+    console.log("status=>", status);
+    if (status === 1) setConfirmOrderStatus(status);
 
     if ((status === 2 || status === 3) && isEmailValid && conifirmEmail) {
-      
       try {
-        MotorHomeServices.emailConfirmation(conifirmEmail).then(
-        (response) =>{
-          console.log("response.data=>", response)
-        }
-        )
+        MotorHomeServices.emailConfirmation(conifirmEmail).then((response) => {
+          console.log("response.data=>", response);
+        });
       } catch (error) {
-        console.log("response.error=>", error)
+        console.log("response.error=>", error);
       }
       setConfirmOrderStatus(status);
       setConifirmEmail();
     }
     if ((status === 2 || status === 3) && countryCode && phoneNumber) {
-      const number = String(phoneNumber).slice(String(countryCode).length, String(phoneNumber).length);
+      const number = String(phoneNumber).slice(
+        String(countryCode).length,
+        String(phoneNumber).length
+      );
       try {
         MotorHomeServices.phoneNumberConfirmation(countryCode, number).then(
-        (response) =>{
-          console.log("response.data=>", response)
-        }
-        )
+          (response) => {
+            console.log("response.data=>", response);
+          }
+        );
       } catch (error) {
-        console.log("response.error=>", error)
+        console.log("response.error=>", error);
       }
       setConfirmOrderStatus(status);
       // setConifirmEmail();
@@ -495,17 +526,15 @@ const Order = () => {
       setConfirmOrderStatus(status);
     }
     if (status === 5) {
-      setConfirmOrderStatus(1);
+      setConfirmOrderStatus(5);
     }
   };
 
   const onChangeEmailHandler = (data) => {
     setConifirmEmail(data);
-    
-    if (data)
-      setIsEmailValid(validator.isEmail(data));
-    else
-      setIsEmailValid(true)
+
+    if (data) setIsEmailValid(validator.isEmail(data));
+    else setIsEmailValid(true);
   };
 
   const onChangePhoneHandler = (data) => {
@@ -515,61 +544,156 @@ const Order = () => {
   const handlePhoneNumberChange = (value, country) => {
     console.log("country=>", country, value);
     setPhoneNumber(value);
-    setCountryCode(country.dialCode)
+    setCountryCode(country.dialCode);
   };
 
   const onChangeConfirmHandler = (data) => {
     setConfirmCode(data);
   };
 
-  const onChangeclick = (e) => {
-    console.log(e.target.value);
+  const onChangeBirthdayclickHandler = (date) => {
+    console.log("birthday=>", date);
+    setFormData((formData) => ({
+      ...formData,
+      ["birthday"]: date,
+    }));
   };
-  // console.log("feffefefefe=>", startDate, endDate, endDate>startDate);
+  const onChangeclickHandler = (e) => {
+    const { name, value } = e.target;
+    if (name === "mail" || name === "repeatmail") {
+      setConifirmEmail(value);
+
+      if (value) setIsEmailValid(validator.isEmail(value));
+      else setIsEmailValid(true);
+    }
+    setFormData((formData) => ({
+      ...formData,
+      [name]: value,
+    }));
+  };
+  // console.log("formData=>", formData);
+  const Thanks = () => {
+    return (
+      <div className="thanks">
+        <div className="text-center motorhome-text1">
+          Thanks for your order!
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Personal information</div>
+          <div className="name">
+            {formData.gender + " " + formData.name + formData.surname}
+          </div>
+          <div className="address">{formData.address}</div>
+          <div className="country">{formData.country}</div>
+          <div className="cell">Cell: {formData.cell}</div>
+          <div className="mail">Mail: {formData.mail}</div>
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Your rented motorhome</div>
+          <div className="model">
+            {parser(product.title?.rendered).split("-")[0]}
+          </div>
+          <div className="pickup">Pickup point: {currentLocation}</div>
+          <div className="from">
+            From: {moment(startDate).format("YYYY-MM-DD")}
+          </div>
+          <div className="to">To: {moment(endDate).format("YYYY-MM-DD")}</div>
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Drivers and passengers</div>
+          <div className="person">2 person</div>
+          <div className="drivers">0 additional drivers</div>
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Additional extras</div>
+          <div className="">Reduced insurance deductible</div>
+          <div className="">2 stk camping furniture 2 stk</div>
+          <div className="">bedding/linnen</div>
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Additional details</div>
+          <div className="">
+            We want to have an additional freezer included!
+          </div>
+        </div>
+        <div className="personal-information">
+          <div className="title motorhome-text3">Total amount</div>
+          <div className="">
+            {productPrices?.prices?.length > 0 &&
+              productPrices.prices[0].pricePerStep *
+                MotorHomeFunctions.getAllDatesBetweenMonths(
+                  startDate,
+                  endDate
+                ) +
+                additionalPrices}
+            ,- (Including VAT)
+          </div>
+        </div>
+        <div className="personal-information">
+          You will soon receive an email with the agreement and invoice for the
+          deposit. Please ensure that our email does not end up in your spam
+          filter.
+        </div>
+        <div className="support personal-information">
+          Support: <span className="support-email">post@motorhome.no</span>
+        </div>
+      </div>
+    );
+  };
+
   const Booking = () => {
     return (
       <div className="box-booked bg-white px-3">
         <div className="row motorhome-booked-description mt-5">
-          <h2 className="motorhome-text9">
-            {t('order.booking.title')}
-          </h2>
+          <h2 className="motorhome-text9">{t("order.booking.title")}</h2>
           <hr className="mt-5" />
           <div className="col-md-7 d-flex flex-column pt-3">
             <select
               className="p-2 mt-2 w-25 form-select"
-              onChange={(e) => onChangeclick(e)}
+              name="gender"
+              value={formData.gender}
+              onChange={(e) => onChangeclickHandler(e)}
             >
-              <option defaultValue>Mr.</option>
-              <option>Mrs.</option>
+              <option value="0">Mr.</option>
+              <option value="1">Mrs.</option>
             </select>
             <input
               className="mt-2 w-75"
               type="text"
               placeholder="Name"
-              onChange={(e) => onChangeclick(e)}
+              name="name"
+              value={formData.name}
+              onChange={(e) => onChangeclickHandler(e)}
             />
             <input
               className="mt-2 w-75"
               type="text"
+              name="surname"
+              value={formData.surname}
               placeholder="Surname"
-              onChange={(e) => onChangeclick(e)}
+              onChange={(e) => onChangeclickHandler(e)}
             />
             <input
               className="mt-2 w-75"
               type="text"
+              name="address"
+              value={formData.address}
               placeholder="Address"
-              onChange={(e) => onChangeclick(e)}
+              onChange={(e) => onChangeclickHandler(e)}
             />
             <select
               className="country p-2 mt-2 w-50 form-select"
-              onChange={(e) => onChangeclick(e)}
+              name="country"
+              value={formData.country}
+              onChange={(e) => onChangeclickHandler(e)}
             >
-              <option defaultValue>Country</option>
-              <option>1</option>
+              <option value="Norway">Norway</option>
+              <option value="German">Germany</option>
+              <option value="Sweden">Sweden</option>
             </select>
             <select
               className="year_of_birth p-2 mt-2 w-50 form-select"
-              onChange={(e) => onChangeclick(e)}
+              onChange={(e) => onChangeclickHandler(e)}
             >
               <option defaultValue>Year of birth.</option>
               <option>1</option>
@@ -580,25 +704,40 @@ const Order = () => {
             <input
               className="mt-2 w-75"
               type="text"
+              value={formData.cell}
               placeholder="Cell"
-              onChange={(e) => onChangeclick(e)}
+              name="cell"
+              onChange={(e) => onChangeclickHandler(e)}
             />
             <input
               className="mt-2 w-75"
               type="text"
+              value={formData.mail}
+              name="mail"
               placeholder="Mail"
-              onChange={(e) => onChangeclick(e)}
+              onChange={(e) => onChangeclickHandler(e)}
             />
+            {!isEmailValid && (
+              <p style={{ color: "red" }}>Invalid email address</p>
+            )}
             <input
               className="mt-2 w-75"
               type="text"
+              value={formData.repeatmail}
+              name="repeatmail"
               placeholder="Repeat mail"
-              onChange={(e) => onChangeclick(e)}
+              onChange={(e) => onChangeclickHandler(e)}
             />
+            {!isEmailValid && (
+              <p style={{ color: "red" }}>Invalid email address</p>
+            )}
             <div className="mb-3 text-box pt-3">
               <label htmlFor="notes" className="form-label"></label>
               <textarea
                 className="form-control notes"
+                name="message"
+                value={formData.message}
+                onChange={(e) => onChangeclickHandler(e)}
                 id="notes"
                 rows="8"
                 placeholder="Notes (optional)"
@@ -613,7 +752,9 @@ const Order = () => {
           <div className="col-md-5 bg-white px-3 pt-4">
             <div className="total-price-box">
               <div className="p-5">
-                <div className="motorhome-text5">{t('order.booking.total_price')}</div>
+                <div className="motorhome-text5">
+                  {t("order.booking.total_price")}
+                </div>
                 <h2 className="motorhome-red">
                   {productPrices?.prices?.length > 0 &&
                     productPrices.prices[0].pricePerStep *
@@ -626,11 +767,11 @@ const Order = () => {
                 </h2>
                 <div className="mt-4">
                   <div>
-                    <span>{t('order.booking.persons')}</span>
+                    <span>{t("order.booking.persons")}</span>
                     <span className="ps-3">{number_of_persons}</span>
                   </div>
                   <div>
-                    <span>{t('order.booking.price_per_night')}</span>
+                    <span>{t("order.booking.price_per_night")}</span>
                     <span className="ps-3">
                       {productPrices?.prices?.length > 0 &&
                         productPrices.prices[0].pricePerStep}
@@ -638,7 +779,7 @@ const Order = () => {
                     </span>
                   </div>
                   <div>
-                    <span>{t('order.booking.night')}</span>
+                    <span>{t("order.booking.night")}</span>
                     <span className="ps-3">
                       {MotorHomeFunctions.getAllDatesBetweenMonths(
                         startDate,
@@ -647,24 +788,24 @@ const Order = () => {
                     </span>
                   </div>
                   <div>
-                    <span>{t('order.booking.addtionals')}</span>
+                    <span>{t("order.booking.addtionals")}</span>
                     <span className="ps-3">{additionalPrices}</span>
                   </div>
                 </div>
                 <div className="mt-4">
                   <div>
-                    <span>{t('order.booking.pickup_point')}</span>
+                    <span>{t("order.booking.pickup_point")}</span>
                     <span className="ps-3">{currentLocation}</span>
                   </div>
                   <div>
-                    <span>{t('order.booking.model')}</span>
+                    <span>{t("order.booking.model")}</span>
                     <span className="ps-3">
                       {parser(product.title?.rendered).split("-")[0]}
                     </span>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div>{t('order.booking.check_in_out')}</div>
+                  <div>{t("order.booking.check_in_out")}</div>
                   <div>
                     <span>{moment(startDate).format("YYYY-MM-DD")}</span>
                     <span className="ps-2">{">"}</span>
@@ -678,8 +819,8 @@ const Order = () => {
                     <input type="checkbox" className="mt-n1 me-1"></input>
                   </div>
                   <div className="ms-2 text-start">
-                    <div>{t('order.booking.yes')}</div>
-                    <Link to="#">{t('order.booking.read_here')}</Link>
+                    <div>{t("order.booking.yes")}</div>
+                    <Link to="#">{t("order.booking.read_here")}</Link>
                   </div>
                 </div>
               </div>
@@ -688,15 +829,15 @@ const Order = () => {
                   className="motorhome-button"
                   onClick={() => onClickConfirmOrder(5)}
                 >
-                  {t('order.booking.complete_order')}
+                  {t("order.booking.complete_order")}
                 </button>
               </div>
             </div>
           </div>
           <div className="col-md-7 bg-white px-3 pt-4">
-          <h4 className="motorhome-description">
-              {t('order.booking.summary')}
-              <span>({t('order.booking.summary_detail')})</span>
+            <h4 className="motorhome-description">
+              {t("order.booking.summary")}
+              <span>({t("order.booking.summary_detail")})</span>
             </h4>
             <div className="mt-5 p-3 w-75 number-persons-confirm d-flex flex-row justify-content-between">
               <div>
@@ -719,17 +860,19 @@ const Order = () => {
                     );
                   })}
                 </select>
-                <span className="ps-2">{t('order.booking.required')}</span>
+                <span className="ps-2">{t("order.booking.required")}</span>
               </div>
               <div></div>
             </div>
             <div className="included-box mt-5">
-              <p className="motorhome-text1 pt-4">Included services</p>
+              <p className="motorhome-text1 pt-4">
+                {t("order.booking.included")}
+              </p>
               <div className="d-flex flex-row justify-content-between">
                 <span></span>
                 <div>
-                  <span className="pe-4">{t('order.booking.price')}</span>
-                  <span>{t('order.booking.total')}</span>
+                  <span className="pe-4">{t("order.booking.price")}</span>
+                  <span>{t("order.booking.total")}</span>
                 </div>
               </div>
               <hr />
@@ -750,7 +893,12 @@ const Order = () => {
                               alt="checkbox"
                             ></img>
                           </div>
-                          <div className="ms-2">{MotorHomeFunctions.getObjectPropertyValue(each, name)}</div>
+                          <div className="ms-2">
+                            {MotorHomeFunctions.getObjectPropertyValue(
+                              each,
+                              name
+                            )}
+                          </div>
                         </div>
                         <div className="d-flex flex-row justify-content-between">
                           <span className="col-6">{each.price},-</span>
@@ -762,13 +910,13 @@ const Order = () => {
             </div>
             <div className="addiotion-extras">
               <p className="motorhome-text1 pt-5 mt-4">
-                {t('order.booking.additional')}
+                {t("order.booking.additional")}
               </p>
               <div className="d-flex flex-row justify-content-between">
                 <span></span>{" "}
                 <div>
-                  <span className="pe-4">{t('order.booking.price')}</span>
-                  <span>{t('order.booking.total')}</span>
+                  <span className="pe-4">{t("order.booking.price")}</span>
+                  <span>{t("order.booking.total")}</span>
                 </div>
               </div>
               <hr />
@@ -784,6 +932,11 @@ const Order = () => {
                               onChange={(e) =>
                                 onClickAdditionalSelect(e, index, each.price)
                               }
+                              value={Number(
+                                selectedExtraValue?.find(
+                                  (value) => value.id === index
+                                )?.count
+                              )}
                             >
                               <option value="0">0</option>
                               {[...Array(each.rules[0].maxValue)].map(
@@ -798,8 +951,14 @@ const Order = () => {
                             </select>
                             <span className="ps-4">
                               {each.name.length > 70
-                                ? MotorHomeFunctions.getObjectPropertyValue(each, name).substring(0, 50) + "..."
-                                : MotorHomeFunctions.getObjectPropertyValue(each, name)}
+                                ? MotorHomeFunctions.getObjectPropertyValue(
+                                    each,
+                                    name
+                                  ).substring(0, 50) + "..."
+                                : MotorHomeFunctions.getObjectPropertyValue(
+                                    each,
+                                    name
+                                  )}
                             </span>
                           </div>
                           <div>
@@ -836,7 +995,8 @@ const Order = () => {
     <div className="order-container">
       {!booked ? (
         <div className="row box">
-          <div className="col-md-5 col-12 motorhome-description mt-5 py-3">
+           <div className="col-lg-5 col-12 motorhome-description mt-5 py-3">
+
             {isProductLoading ? (
               <div className="text-center">
                 <GridLoader color="#36d7b7" />
@@ -898,30 +1058,43 @@ const Order = () => {
                   </div>
                 </div>
                 <h4 className="motorhome-label-g">
-              {t('motorhome.specs.pretext')}
-            </h4>
+                  {t("motorhome.specs.pretext")}
+                </h4>
                 <h2 className="motorhome-title-g">
-                  <span>{lang? parser(product?.title?.rendered) : parser(MotorHomeFunctions.getObjectPropertyValue(product.acf, name))}</span>
+                  <span>
+                    {lang
+                      ? parser(product?.title?.rendered)
+                      : parser(
+                          MotorHomeFunctions.getObjectPropertyValue(
+                            product.acf,
+                            name
+                          )
+                        )}
+                  </span>
                 </h2>
 
                 <div className="row gx-5 p-3 motorhome-property">
                   <div className="col-4">
                     <div className="border rounded-3 text-center pt-2 motorhome-properties">
                       <img src={images.seat} alt="seat" />
-                      <div className="">{product?.acf?.maxPeople} seats</div>
+                      <div className="">
+                        {product?.acf?.maxPeople} {t("motorhome.specs.seats")}
+                      </div>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="border rounded-3 text-center pt-2 motorhome-properties">
                       <img src={images.bed} alt="bed" />
-                      <div className="">{product?.acf?.maxPeople} beds</div>
+                      <div className="">
+                        {product?.acf?.maxPeople} {t("motorhome.specs.beds")}
+                      </div>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="border rounded-3 text-center pt-2 motorhome-properties">
                       <img src={images.classs} alt="class" />
                       <div className="">
-                        Class{" "}
+                        {t("motorhome.specs.class")}{" "}
                         {
                           product?.acf?.properties?.find(
                             (property) => property.propertyKey === "licence"
@@ -932,7 +1105,15 @@ const Order = () => {
                   </div>
                 </div>
                 <h4 className="pt-5 motorhome-description mobile">
-                  {parser(MotorHomeFunctions.getObjectPropertyValue(product.acf?.properties.find(property => property.propertyKey==='description_long'), propertyText))}
+                  {parser(
+                    MotorHomeFunctions.getObjectPropertyValue(
+                      product.acf?.properties.find(
+                        (property) =>
+                          property.propertyKey === "description_long"
+                      ),
+                      propertyText
+                    )
+                  )}
                 </h4>
                 <div className="mobile py-5">
                   <ReactPlayer
@@ -948,13 +1129,15 @@ const Order = () => {
               </>
             )}
           </div>
-          <div className="col-md-7 col-12">
+          <div className="col-lg-7 col-12">
             <div className="ordered p-5">
               <h2 className="text-center label mt-5">
-              {t('order.booking.lets_go')}
+                {t("order.booking.lets_go")}
               </h2>
               <div className="text-center journey-box">
-                <div className="title pt-3">{t('order.booking.book_journey')}</div>
+                <div className="title pt-3">
+                  {t("order.booking.book_journey")}
+                </div>
                 <div className="pickup-point p-5 pt-2">
                   <PickUp
                     current={currentLocation}
@@ -972,8 +1155,8 @@ const Order = () => {
                 <NoAvailable />
               )}
               {currentLocation != "base" ? (
-                <div className="p-4">
-                  <DateRangePickers
+                <div className="py-4 px-3">
+                <DateRangePickers
                     direction={true}
                     isLoading={isLoading}
                     selectedDates={selectedDates}
@@ -990,7 +1173,7 @@ const Order = () => {
                       className="book-button mt-5"
                       onClick={(e) => onClickBook(e)}
                     >
-                      {t('order.booking.book')}
+                      {t("order.booking.book")}
                     </button>
                   </div>
                 </div>
@@ -1056,12 +1239,25 @@ const Order = () => {
               </div>
               <div className="col-md-6">
                 <div className="pt-3 motorhome-text5">
-                  <span>Practical and spacious</span>
+                  <span>{t("motorhome.specs.pretext")}</span>
                 </div>
                 <h2 className="pt-2  motorhome-title-g">
-                  <span>{parser(product.title?.rendered)}</span>
+                  <span>
+                    {MotorHomeFunctions.getObjectPropertyValue(
+                      product.title?.rendered,
+                      name
+                    )}
+                  </span>
                 </h2>
-                <LongText content={product.content?.rendered} limit={300} />
+                <LongText
+                  content={MotorHomeFunctions.getObjectPropertyValue(
+                    product.acf?.properties.find(
+                      (property) => property.propertyKey === "description_long"
+                    ),
+                    propertyText
+                  )}
+                  limit={300}
+                />
               </div>
             </div>
           </div>
@@ -1088,17 +1284,19 @@ const Order = () => {
                       );
                     })}
                   </select>
-                  <span className="ps-2">{t('order.booking.required')}</span>
+                  <span className="ps-2">{t("order.booking.required")}</span>
                 </div>
                 <div></div>
               </div>
               <div className="included-box mt-5">
-                <p className="motorhome-text1 pt-4">Included services</p>
+                <p className="motorhome-text1 pt-4">
+                  {t("order.booking.included")}
+                </p>
                 <div className="d-flex flex-row justify-content-between">
                   <span></span>
                   <div>
-                    <span className="pe-4">{t('order.booking.price')}</span>
-                    <span>{t('order.booking.total')}</span>
+                    <span className="pe-4">{t("order.booking.price")}</span>
+                    <span>{t("order.booking.total")}</span>
                   </div>
                 </div>
                 <hr />
@@ -1119,7 +1317,12 @@ const Order = () => {
                                 alt="checkbox"
                               ></img>
                             </div>
-                            <div className="ms-2">{MotorHomeFunctions.getObjectPropertyValue(each, name)}</div>
+                            <div className="ms-2">
+                              {MotorHomeFunctions.getObjectPropertyValue(
+                                each,
+                                name
+                              )}
+                            </div>
                           </div>
                           <div className="d-flex flex-row justify-content-between">
                             <span className="col-6 pe-4">{each.price},-</span>
@@ -1141,13 +1344,13 @@ const Order = () => {
               </div>
               <div className="addiotion-extras">
                 <p className="motorhome-text1 pt-5 mt-4">
-                {t('order.booking.additional')}
+                  {t("order.booking.additional")}
                 </p>
                 <div className="d-flex flex-row justify-content-between">
                   <span></span>
                   <div>
-                    <span className="pe-4">{t('order.booking.price')}</span>
-                    <span>{t('order.booking.total')}</span>
+                    <span className="pe-4">{t("order.booking.price")}</span>
+                    <span>{t("order.booking.total")}</span>
                   </div>
                 </div>
                 <hr />
@@ -1177,8 +1380,14 @@ const Order = () => {
                               </select>
                               <span className="ps-4">
                                 {each.name.length > 70
-                                  ? MotorHomeFunctions.getObjectPropertyValue(each, name).substring(0, 50) + "..."
-                                  : MotorHomeFunctions.getObjectPropertyValue(each, name)}
+                                  ? MotorHomeFunctions.getObjectPropertyValue(
+                                      each,
+                                      name
+                                    ).substring(0, 50) + "..."
+                                  : MotorHomeFunctions.getObjectPropertyValue(
+                                      each,
+                                      name
+                                    )}
                               </span>
                             </div>
                             <div>
@@ -1210,7 +1419,9 @@ const Order = () => {
               {startDate && endDate ? (
                 <div className="total-price-box">
                   <div className="p-5">
-                    <div className="motorhome-text5">{t('order.booking.total_price')}</div>
+                    <div className="motorhome-text5">
+                      {t("order.booking.total_price")}
+                    </div>
                     <h2 className="motorhome-red">
                       {productPrices?.prices?.length > 0 &&
                         productPrices.prices[0].pricePerStep *
@@ -1223,11 +1434,11 @@ const Order = () => {
                     </h2>
                     <div className="mt-5">
                       <div>
-                        <span>{t('order.booking.persons')}</span>
+                        <span>{t("order.booking.persons")}</span>
                         <span className="ps-3">{number_of_persons}</span>
                       </div>
                       <div>
-                        <span>{t('order.booking.price_per_night')}</span>
+                        <span>{t("order.booking.price_per_night")}</span>
                         <span className="ps-3">
                           {productPrices?.prices?.length > 0 &&
                             productPrices.prices[0].pricePerStep}
@@ -1235,7 +1446,7 @@ const Order = () => {
                         </span>
                       </div>
                       <div>
-                        <span>{t('order.booking.night')}</span>
+                        <span>{t("order.booking.night")}</span>
                         <span className="ps-3">
                           {MotorHomeFunctions.getAllDatesBetweenMonths(
                             startDate,
@@ -1244,24 +1455,24 @@ const Order = () => {
                         </span>
                       </div>
                       <div>
-                        <span>{t('order.booking.addtionals')}</span>
+                        <span>{t("order.booking.addtionals")}</span>
                         <span className="ps-3">{additionalPrices}</span>
                       </div>
                     </div>
                     <div className="mt-4">
                       <div>
-                        <span>{t('order.booking.pickup_point')}</span>
+                        <span>{t("order.booking.pickup_point")}</span>
                         <span className="ps-3">{currentLocation}</span>
                       </div>
                       <div>
-                        <span>{t('order.booking.model')}</span>
+                        <span>{t("order.booking.model")}</span>
                         <span className="ps-3">
                           {parser(product.title?.rendered).split("-")[0]}
                         </span>
                       </div>
                     </div>
                     <div className="mt-4">
-                      <div>{t('order.booking.check_in_out')}</div>
+                      <div>{t("order.booking.check_in_out")}</div>
                       <div>
                         <span>{moment(startDate).format("YYYY-MM-DD")}</span>
                         <span className="ps-2">{">"}</span>
@@ -1274,9 +1485,10 @@ const Order = () => {
                   <div className="d-grid gap-2 col-10 mx-auto pb-5">
                     <button
                       className="motorhome-button number-persons-confirm"
-                      onClick={() => onClickConfirmOrder(1)}
+                      // onClick={() => onClickConfirmOrder(1)}
+                      onClick={() => gotoBookingSite()}
                     >
-                      {t('order.booking.confirm_order')}
+                      {t("order.booking.confirm_order")}
                     </button>
                   </div>
                 </div>
@@ -1287,7 +1499,405 @@ const Order = () => {
           </div>
         </div>
       ) : confirmOrderStatus === 4 ? (
-        <Booking />
+        <div className="box-booked bg-white px-5">
+          <div className="row motorhome-booked-description mt-5">
+            <div className="motorhome-text9">
+              Great, now you can <br />
+              complete your booking
+            </div>
+            <hr className="mt-5" />
+            <div className="col-md-7 d-flex flex-column pt-3">
+              <select
+                className="p-2 mt-2 w-25 form-select"
+                name="gender"
+                value={formData.gender}
+                onChange={(e) => onChangeclickHandler(e)}
+              >
+                <option value="0">Mr.</option>
+                <option value="1">Mrs.</option>
+              </select>
+              <input
+                className="mt-2 w-75"
+                type="text"
+                placeholder="Name"
+                name="name"
+                value={formData.name}
+                onChange={(e) => onChangeclickHandler(e)}
+              />
+              <input
+                className="mt-2 w-75"
+                type="text"
+                name="surname"
+                value={formData.surname}
+                placeholder="Surname"
+                onChange={(e) => onChangeclickHandler(e)}
+              />
+              <input
+                className="mt-2 w-75"
+                type="text"
+                name="address"
+                value={formData.address}
+                placeholder="Address"
+                onChange={(e) => onChangeclickHandler(e)}
+              />
+              <select
+                className="country p-2 mt-2 w-50 form-select"
+                name="country"
+                value={formData.country}
+                onChange={(e) => onChangeclickHandler(e)}
+              >
+                <option value="Norway">Norway</option>
+                <option value="German">Germany</option>
+                <option value="Sweden">Sweden</option>
+              </select>
+              <DatePicker
+                className="year_of_birth p-2 mt-2 w-50"
+                placeholderText="Year of birth."
+                onChange={onChangeBirthdayclickHandler}
+                selected={formData.birthday}
+              />
+              <PhoneNumberInput
+                handlePhoneNumberChange={handlePhoneNumberChange}
+                phoneNumber={phoneNumber}
+              />
+              <input
+                className="mt-2 w-75"
+                type="email"
+                value={formData.mail}
+                name="mail"
+                placeholder="Mail"
+                onChange={(e) => onChangeclickHandler(e)}
+              />
+              {/* {!isEmailValid && <p style={{ color: 'red' }}>Invalid email address</p>} */}
+              <input
+                className="mt-2 w-75"
+                type="email"
+                value={formData.repeatmail}
+                name="repeatmail"
+                placeholder="Repeat mail"
+                onChange={(e) => onChangeclickHandler(e)}
+              />
+              {/* {!isRepeatEmailValid && <p style={{ color: 'red' }}>Invalid repeat email address</p>} */}
+              <div className="mb-3 text-box pt-3">
+                <label htmlFor="notes" className="form-label"></label>
+                <textarea
+                  className="form-control notes"
+                  name="message"
+                  value={formData.message}
+                  onChange={(e) => onChangeclickHandler(e)}
+                  id="notes"
+                  rows="8"
+                  placeholder="Notes (optional)"
+                ></textarea>
+              </div>
+
+              {/* <div className="">
+              <span>Summary</span>
+              <span>(it's not to late to add additional extras)</span>
+          </div> */}
+            </div>
+            <div className="col-md-5 bg-white px-5 pt-4">
+              <div className="total-price-box">
+                <div className="p-5">
+                  <div className="motorhome-text5">Total price(NOK)</div>
+                  <div className="motorhome-text8">
+                    {productPrices?.prices?.length > 0 &&
+                      productPrices.prices[0].pricePerStep *
+                        MotorHomeFunctions.getAllDatesBetweenMonths(
+                          startDate,
+                          endDate
+                        ) +
+                        additionalPrices}
+                    ,-
+                  </div>
+                  <div className="mt-4">
+                    <div>
+                      <span>Persons:</span>
+                      <span className="ps-3">{number_of_persons}</span>
+                    </div>
+                    <div>
+                      <span>Price per night:</span>
+                      <span className="ps-3">
+                        {productPrices?.prices?.length > 0 &&
+                          productPrices.prices[0].pricePerStep}
+                        ,-
+                      </span>
+                    </div>
+                    <div>
+                      <span>Night:</span>
+                      <span className="ps-3">
+                        {MotorHomeFunctions.getAllDatesBetweenMonths(
+                          startDate,
+                          endDate
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span>Addtionals:</span>
+                      <span className="ps-3">{additionalPrices}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div>
+                      <span>Pickup Point:</span>
+                      <span className="ps-3">{currentLocation}</span>
+                    </div>
+                    <div>
+                      <span>Model:</span>
+                      <span className="ps-3">
+                        {parser(product.title?.rendered).split("-")[0]}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div>Check-in and check out</div>
+                    <div>
+                      <span>{moment(startDate).format("YYYY-MM-DD")}</span>
+                      <span className="ps-2">{">"}</span>
+                      <span className="ps-2">
+                        {moment(endDate).format("YYYY-MM-DD")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="d-flex flex-row mt-4">
+                    <div className="mt-n1">
+                      <input type="checkbox" className="mt-n1 me-1"></input>
+                    </div>
+                    <div className="ms-2 text-start">
+                      <div>Yes, I have read the conditions.</div>
+                      <Link to="#">Read our conditions here</Link>
+                    </div>
+                  </div>
+                </div>
+                <div className="d-grid gap-2 col-10 mx-auto pb-5">
+                  <button
+                    className="motorhome-button"
+                    onClick={() => onClickConfirmOrder(5)}
+                  >
+                    Complete order
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-7 bg-white px-5 pt-4">
+              <div className="motorhome-text6">
+                <span>
+                  <b>Summary</b>
+                </span>
+                <span>(it's not to late to add additional extras)</span>
+              </div>
+              <div className="mt-5 p-3 w-75 number-persons-confirm d-flex flex-row justify-content-between">
+                <div>
+                  <select
+                    className="number_of_persons px-3 py-2"
+                    onChange={(e) => onChangeNumberOfPersonsClick(e)}
+                    value={number_of_persons}
+                  >
+                    {[
+                      ...Array(
+                        product.acf?.properties?.find(
+                          (property) => property.propertyKey === "persons_max"
+                        ).propertyValue
+                      ),
+                    ].map((_each, index) => {
+                      return (
+                        <option key={index} value={index + 1}>
+                          {index + 1}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <span className="ps-2">Number of persons(required)</span>
+                </div>
+                <div></div>
+              </div>
+              <div className="included-box mt-5">
+                <div className="motorhome-text1 pt-4">Included services</div>
+                <div className="d-flex flex-row justify-content-between">
+                  <span></span>
+                  <div>
+                    <span className="pe-4">Price</span>
+                    <span>Total</span>
+                  </div>
+                </div>
+                <hr />
+                {product.acf?.additional_services.length > 0 &&
+                  product.acf?.additional_services
+                    .filter((each) => each.rules[0].selectedByDefault === true)
+                    .map((each, index) => {
+                      return (
+                        <div
+                          key={index}
+                          className="d-flex flex-row justify-content-between mt-3"
+                        >
+                          <div className="d-flex flex-row justify-content-between">
+                            <div>
+                              <img
+                                src={images.checked}
+                                className=""
+                                alt="checkbox"
+                              ></img>
+                            </div>
+                            <div className="ms-2">
+                              {MotorHomeFunctions.getObjectPropertyValue(
+                                each,
+                                name
+                              )}
+                            </div>
+                          </div>
+                          <div className="d-flex flex-row justify-content-between">
+                            <span className="col-6">{each.price}</span>
+                            <span className="col-6">{each.price}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+              </div>
+              <div className="addiotion-extras">
+                <div className="motorhome-text1 pt-5 mt-4">
+                  Need any additional extras?
+                </div>
+                <div className="d-flex flex-row justify-content-between">
+                  <span></span>{" "}
+                  <div>
+                    <span className="pe-4">Price</span>
+                    <span>Total</span>
+                  </div>
+                </div>
+                <hr />
+                {product.acf?.additional_services.length > 0 &&
+                  product.acf?.additional_services
+                    .filter((each) => each.rules[0].selectedByDefault === false)
+                    .map((each, index) => {
+                      return (
+                        <>
+                          <div className="d-flex flex-row justify-content-between">
+                            <div>
+                              <select
+                                onChange={(e) =>
+                                  onClickAdditionalSelect(e, index, each.price)
+                                }
+                                value={
+                                  selectedExtraValue?.find(
+                                    (value) => value.id === index
+                                  )?.count
+                                }
+                              >
+                                <option value="0">0</option>
+                                {[...Array(each.rules[0].maxValue)].map(
+                                  (_each, index) => {
+                                    return (
+                                      <option key={index} value={index + 1}>
+                                        {index + 1}
+                                      </option>
+                                    );
+                                  }
+                                )}
+                              </select>
+                              <span className="ps-4">
+                                {each.name.length > 70
+                                  ? MotorHomeFunctions.getObjectPropertyValue(
+                                      each,
+                                      name
+                                    ).substring(0, 50) + "..."
+                                  : MotorHomeFunctions.getObjectPropertyValue(
+                                      each,
+                                      name
+                                    )}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="pe-4">{each.price}</span>
+                              <span>
+                                {Number(each.price) *
+                                  (Number(
+                                    selectedExtraValue?.find(
+                                      (value) => value.id === index
+                                    )?.count
+                                  )
+                                    ? Number(
+                                        selectedExtraValue.find(
+                                          (value) => value.id === index
+                                        ).count
+                                      )
+                                    : 0)}
+                                ,-
+                              </span>
+                            </div>
+                          </div>
+                          <hr />
+                        </>
+                      );
+                    })}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : confirmOrderStatus === 5 ? (
+        <div className="thanks">
+          <div className="text-center motorhome-text1">
+            Thanks for your order!
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Personal information</div>
+            <div className="name">
+              {formData.gender + " " + formData.name + formData.surname}
+            </div>
+            <div className="address">{formData.address}</div>
+            <div className="country">{formData.country}</div>
+            <div className="cell">Cell: {phoneNumber}</div>
+            <div className="mail">Mail: {formData.mail}</div>
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Your rented motorhome</div>
+            <div className="model">
+              {parser(product.title?.rendered).split("-")[0]}
+            </div>
+            <div className="pickup">Pickup point: {currentLocation}</div>
+            <div className="from">
+              From: {moment(startDate).format("YYYY-MM-DD")}
+            </div>
+            <div className="to">To: {moment(endDate).format("YYYY-MM-DD")}</div>
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Drivers and passengers</div>
+            <div className="person">2 person</div>
+            <div className="drivers">0 additional drivers</div>
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Additional extras</div>
+            <div className="">Reduced insurance deductible</div>
+            <div className="">2 stk camping furniture 2 stk</div>
+            <div className="">bedding/linnen</div>
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Additional details</div>
+            <div className="">
+              We want to have an additional freezer included!
+            </div>
+          </div>
+          <div className="personal-information">
+            <div className="title motorhome-text3">Total amount</div>
+            <div className="">
+              {productPrices?.prices?.length > 0 &&
+                productPrices.prices[0].pricePerStep *
+                  MotorHomeFunctions.getAllDatesBetweenMonths(
+                    startDate,
+                    endDate
+                  ) +
+                  additionalPrices}
+              ,- (Including VAT)
+            </div>
+          </div>
+          <div className="personal-information">
+            You will soon receive an email with the agreement and invoice for
+            the deposit. Please ensure that our email does not end up in your
+            spam filter.
+          </div>
+          <div className="support personal-information">
+            Support: <span className="support-email">post@motorhome.no</span>
+          </div>
+        </div>
       ) : (
         <Verification
           status={confirmOrderStatus}

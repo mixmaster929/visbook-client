@@ -6,7 +6,6 @@ import MotorHomeTip from "../components/MotorHomeTip";
 import MotorHomeServices from "../../services/motorhome.services";
 import { GridLoader } from "react-spinners";
 import moment from "moment";
-// import "./styles.css";
 import NoAvailable from "../components/NoAvailable";
 import MotorHomeFunctions from "../../services/motorhome.functions";
 import { useTranslation } from 'react-i18next';
@@ -67,7 +66,7 @@ const SearchResult = () => {
         let totalPrice =
           Number(product.prices[0].pricePerStep) *
           MotorHomeFunctions.getAllDatesBetweenMonths(startDate, endDate);
-
+    
         product.additionalServices
           ?.filter((each) => each.rules.selectedByDefault === true)
           .map((_each) => {
@@ -84,7 +83,9 @@ const SearchResult = () => {
       setAdditionalPrices(totalPrices);
     }
   }, [allProducts]);
-  console.log("prices", prices);
+  
+  console.log("prices", prices);  
+  
 
   useEffect(() => {
     if (startDate != null && endDate != null && currentLocation === "base") {
@@ -193,10 +194,10 @@ const SearchResult = () => {
   return (
     <div className="search-result-container">
       <div className="row gx-4 pickup-picker bg-white px-3 pt-4">
-        <div className="col-md-3 col-12">
+        <div className="col-lg-3 col-md-4 col-12">
           <PickUp current={currentLocation} onClickSelect={onPickupPoint} />
         </div>
-        <div className="col-md-5 col-12">
+        <div className="col-lg-5 col-md-8 col-12">
           <DatePickers
             startDate={startDate}
             setStartDate={onSetStartDate}

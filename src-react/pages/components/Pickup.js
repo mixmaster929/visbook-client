@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import MotorHomeServices from "../../services/motorhome.services";
-// import "./styles.css";
 import { useTranslation } from 'react-i18next';
-
 
 const PickUp = (props) => {
   const [locations, setLocations] = useState([]);
